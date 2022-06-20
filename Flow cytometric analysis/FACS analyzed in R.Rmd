@@ -1,0 +1,120 @@
+---
+title: "FACS data analyzed in R"
+author: "[Tom Pham](https://github.com/TomPham97)"
+date: "`r Sys.Date()`"
+output: html_notebook
+bibliography: citations.bib
+link-citations: yes
+---
+
+# Required packages
+
+Installing required packages[Source](https://github.com/hally166/Cytometry-R-scripts/blob/master/Startingscript.R)
+
+```{r eval = FALSE}
+# Installing the "basic" flow cytometry packages.  They all live on a repository called Bioconductor.
+install.packages("BiocManager")
+
+#You can either do library(BiocManager) and install("flowCore) or what I have done below.
+BiocManager::install("flowCore") #interpret .fcs files
+BiocManager::install("flowViz") #basic visulisation
+BiocManager::install("ggcyto") #advanced visulisation using the ggPlot nomenclature
+BiocManager::install("openCyto") #Used to link various analysis methodologies
+BiocManager::install("flowWorkspace") #used to build anaysis templates
+BiocManager::install("CytoML") #imports FlowJo and DiVA workspaces
+
+#These packages largly require each other to work (except flowCore which is the "base package) 
+#so will often load each other without my help.  For simplicty I have loaded them all.
+
+#You will need to "clean" your data.  flowAI and flowCut are my recomendations.  
+#flowClean is the original, but is supeceeded by flowCut
+BiocManager::install("flowAI")
+BiocManager::install("flowClean")
+BiocManager::install("flowCut")
+
+#CytoExploreR is not available on bioconductor and needs to be loaded straight from GitHub.  TO do this you need the package devtools.
+install.packages("devtools")
+
+#An intresting project is CytoExploreR that trys to blend the power of R with the ease of use of a mouse.
+devtools::install_github("DillonHammill/CytoExploreRData")
+devtools::install_github("DillonHammill/CytoExploreR",build_vignettes = TRUE)
+```
+
+# Load the data
+
+Data is loaded using flowCore[@flowcore]
+
+```{r eval = FALSE}
+#Load a single fcs
+myfile <- "C:/Users/Flowjo/Desktop/Tom Pham AG Giebel/Data/MLR/Tobias/Bcells stim.fcs"
+fcsfile <- flowCore::read.FCS(myfile,
+                              truncate_max_range = FALSE,
+                              alter.names = TRUE)
+library(flowCore)
+fcsfile1 <- read.FCS(myfile)
+fcsfile
+
+#Load many fcs files into a flow set
+myfiles <- list.files(path="C:/Users/Flowjo/Desktop/Tom Pham AG Giebel/Data/MLR/Tobias/Activation panel",
+                      pattern=".FCS$")
+fs <- flowCore::read.flowSet(path="C:/Users/Flowjo/Desktop/Tom Pham AG Giebel/Data/MLR/Tobias/Activation panel",
+                             truncate_max_range = FALSE,
+                             alter.names = TRUE)
+fs
+fs[[1]]
+```
+
+# Compensation and transform
+
+[Source](https://github.com/hally166/Cytometry-R-scripts/blob/master/compensate_transform_clean.R)
+
+[flowAI instruction](https://www.bioconductor.org/packages/release/bioc/vignettes/flowAI/inst/doc/flowAI.html)
+
+[ggCyto instruction](https://www.bioconductor.org/packages/release/bioc/vignettes/ggcyto/inst/doc/Top_features_of_ggcyto.html)
+
+```{r eval = FALSE}
+#Load the packages
+library(flowCore)
+library(flowAI)
+library(ggcyto)
+
+#How to get help
+??flowCore
+
+names(fcsfile)
+exprs(fcsfile)
+each_col(fcsfile, median)
+keyword(fs[[1]])$SPILL
+
+#Compensation
+spillover(fs[[1]])
+fcsfile_comp <- compensate(fs[[1]], spillover(fs[[1]])$SPILL)
+fcsfile_comp
+
+#Cleaning
+fcsfile_comp_clean <- flow_auto_qc(fs[[1]])
+fcsfile_comp_clean
+keyword(fcsfile_comp_clean) <- keyword(fs[[1]])
+fcsfile_comp_clean
+??flowAI
+
+#Transformation
+trans <- estimateLogicle(fcsfile_comp_clean, colnames(fcsfile_comp_clean[,5:30]), m = 5.2)
+fcsfile_comp_clean_trans <- transform(fcsfile_comp_clean, trans)
+
+# Fs
+## Cleaning
+fs_comp_clean <- flow_auto_qc(fs)
+
+## Transformation
+trans <- estimateLogicle(fs_comp_clean[[1]], colnames(fs_comp_clean[[1]][,5:30]), m = 5.2)
+fs_comp_clean_trans <- transform(fs_comp_clean, trans)
+
+## Visualize the results
+fsApply(fs_comp_clean_trans, autoplot)
+autoplot(fs_comp_clean_trans, x="FL1.A", y="FL2.A", bins = 256)
+parameters <- fs_comp_clean[[1]][,5:30]
+parameters
+
+
+```
