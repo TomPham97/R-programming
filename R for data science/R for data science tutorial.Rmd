@@ -1,0 +1,147 @@
+---
+title: "R for data science tutorial"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::downcute:
+    self_contained: true
+    downcute_theme: "chaos"
+---
+```{r setup, include=FALSE}
+## Global options
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+# 3. Data visualization
+## 3.1 Prerequisites
+
+```{r}
+library(tidyverse)
+```
+
+## 3.2
+### 3.2.1 The mpg data frame
+```{r}
+mpg
+```
+
+### 3.2.2 Creating a ggplot
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy))
+```
+### 3.2.4 Exercises
+```{r}
+# How many rows are in mpg? How many columns
+dim(mpg)
+```
+```{r eval = FALSE}
+# What does the drv variable describe?
+?mpg
+drv <- "the type of drive train, where f = front-wheel drive, r = rear wheel drive, 4 = 4wd"
+```
+```{r}
+# Make a scatterplot of hwy vs cyl
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = hwy, y = cyl))
+
+# What happens if you make a scatterplot of class vs drv? Why is the plot not useful?
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = class, y = drv))
+
+```
+
+## 3.3 Aesthetic mappings
+> "The greatest value of a picture is when it forces us to notice what we never expected to see." - John Tukey
+
+Map the colors of the points to the class variable to reveal the class of each car
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = class))
+```
+Mapping to the shapes of the points instead
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, shape = class))
+# Additional groups beyond 6 will go unplotted when using the shape aesthetic
+```
+### 3.3.1 Exercises
+```{r}
+# Why are the points not blue?
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = "blue"))
+## fix by bringing the color customization outside of the aes argument
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy), color = "blue")
+
+# Map a continuous variable to color, size, and shape. How do these aesthetics behave differently for categorical vs continuous variables?
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = class, y = fl, color = hwy))
+
+# What happens if you map the same variable to multiple aesthetics?
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = cty, y = cty, color = cty))
+```
+```{r eval = FALSE}
+# What does the stroke aesthetic do? What shapes does it work with?
+?geom_point
+```
+``` {r}
+## For shapes that have a border, the stroke aesthetic modifies the width of the border
+
+# What happens if you map an aesthetic to something other than a variable name?
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = class, y = fl, color = displ < 5))
+```
+## 3.5 Facets
+To facet your plot by a single variable, use facet_wrap()
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_wrap(~ class, nrow = 2)
+```
+To facet your plot on the combination of two variables, add facet_grid()
+to your plot call
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(drv ~ cyl)
+```
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(. ~ cyl)
+```
+### 3.5.1 Exercises
+```{r}
+# What happens if you facet on a continuous variable?
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = class)) +
+  facet_wrap(~ hwy)
+
+# What plots does the following code make? What does . do?
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(drv ~ .)
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(. ~ cyl)
+
+# What are the advantages/disadvantages to using faceting instead of the color aesthetic?
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_wrap(~ class, nrow = 2)
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = class))
+```
+## 3.6 Geometric objects
+```{r}
+# left
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy))
+
+# right
+ggplot(data = mpg) +
+  geom_smooth(mapping = aes(x = displ, y = hwy))
+```
+
